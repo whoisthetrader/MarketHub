@@ -1,6 +1,7 @@
 
 const User=require('../models/user.model')
-
+const generateTokens=require('../utils/generateTokens')
+const bcrypt=require('bcryptjs')
 
 async function register (req,res,next){
   try{
@@ -34,4 +35,42 @@ async function register (req,res,next){
  
 }
 
-module.exports=register
+async function login(req,res,next){
+ try{
+  const {email,password}=req.body
+  const findUser=await User.findOne({email})
+ 
+  if(!findUser){
+    res.status(404).json({
+      msg:'email not found'
+    })
+    return
+   }
+   const checkPassword=await bcrypt.compare(password,findUser.password);
+   if(!checkPassword){
+    return res.status(401).json({
+      msg:'your password is wrong'
+    })
+   }
+   const{accessToken,refreshToken}= generateTokens({userId:findUser._id,role:findUser.role})
+
+   res.cookie('refreshToken',refreshToken,{
+    httpOnly:true,
+    maxAge:7*24*60*60*1000
+   })
+   const findUserCopy=findUser.toObject()
+   delete findUserCopy.password
+
+   res.status(200).json({
+    accessToken,user:findUserCopy
+   })
+   
+ }catch(error){
+  next(error)
+ } 
+  
+
+
+}
+
+module.exports={register,login}
