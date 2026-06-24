@@ -1,6 +1,7 @@
 const express=require('express')
 const dotenv=require('dotenv')
 const mongoConnect = require('./config/db')
+const errorHandler=require('./middleware/error.middleware')
 const path=require('path')
 
 const pathForEnv=path.join(__dirname,"../.env")
@@ -14,5 +15,5 @@ app.use(express.json())
 mongoConnect();
 
 app.use('/api/auth',authRouter)
-
+app.use(errorHandler)
 app.listen(portConnect);
